@@ -60,6 +60,8 @@ class CompetitiveBot(BotAI):
 
         await self.warp_stalkers()
 
+        #await self.micro()
+
         pass
 
     async def build_workers(self):
@@ -237,8 +239,8 @@ class CompetitiveBot(BotAI):
     async def attack(self):
         # changed the method to make the stalkers attack if
         # they are 7 idle instead au 5 in total
-        stalkercount = self.units(UnitTypeId.STALKER).idle.amount
-        stalkers = self.units(UnitTypeId.STALKER).ready.idle
+        stalkercount = self.units(UnitTypeId.STALKER).amount
+        stalkers = self.units(UnitTypeId.STALKER).ready
 
         if stalkercount > 6:
             for stalker in stalkers:
@@ -261,6 +263,26 @@ class CompetitiveBot(BotAI):
             ):
                 placement = proxy.position.random_on_distance(3)
                 warpgate.warp_in(UnitTypeId.STALKER, placement)
+
+
+    # a bit cheating against real person I think
+    async def micro(self):
+        stalkers = self.units(UnitTypeId.STALKER)
+        enemy_location = self.enemy_start_locations[0]
+
+        if (
+            self.structures(UnitTypeId.PYLON).ready
+        ):
+            pylon = self.structures(UnitTypeId.PYLON).closest_to(enemy_location)
+
+            for stalker in stalkers:
+                if stalker.weapon_cooldown == 0:
+                    stalker.attack(enemy_location)
+                elif stalker.weapon_cooldown < 0:
+                     stalker.move(pylon)
+                else:
+                    stalker.move(pylon)
+
 
     def on_end(self, result):
         print("Game ended.")
