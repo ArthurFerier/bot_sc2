@@ -99,6 +99,7 @@ class CompetitiveBot(BotAI):
 
 
 
+
     # why do I have this function ? ===> four gates
     async def build_gateway(self):
         if (
