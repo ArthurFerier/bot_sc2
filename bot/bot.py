@@ -20,6 +20,11 @@ class CompetitiveBot(BotAI):
         Race.Random
     """
 
+    # todo : couldn't find the __init__ method to set the sc2.proxy_built = False
+    def __init__(self):
+        BotAI.__init__(self)
+        self.proxy_built = False
+
     async def on_start(self):
         print("Game started")
         # Do things here before the game starts
@@ -79,6 +84,18 @@ class CompetitiveBot(BotAI):
                 self.can_afford(UnitTypeId.PYLON)
         ):
             await self.build(UnitTypeId.PYLON, near=position)
+
+        # build proxy pylon
+        # ! proxy_built can be equal to true
+        if (
+            not self.proxy_built and
+            self.structures(UnitTypeId.GATEWAY).amount == 4 and
+            self.can_afford(UnitTypeId.PYLON)
+        ):
+            self.proxy_built = True
+            # we start from the middle and we go 20 blocks to the enemy location
+            pos = self.game_info.map_center.towards(self.enemy_start_locations[0], 20)
+            await self.build(UnitTypeId.PYLON, near=pos)
 
 
 
