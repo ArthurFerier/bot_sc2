@@ -58,6 +58,8 @@ class CompetitiveBot(BotAI):
 
         await self.attack()
 
+        await self.warp_stalkers()
+
         pass
 
     async def build_workers(self):
@@ -148,7 +150,7 @@ class CompetitiveBot(BotAI):
 
     async def train_stalkers(self):
         # we prefer train stalkers in warpgates
-
+        """
         if self.structures(UnitTypeId.WARPGATE).amount > 0:
 
             pylon = self.structures(UnitTypeId.PYLON).ready.random
@@ -178,7 +180,7 @@ class CompetitiveBot(BotAI):
                     gateway.is_idle
             ):
                 gateway.train(UnitTypeId.STALKER)
-        """
+
 
 
 
@@ -241,6 +243,24 @@ class CompetitiveBot(BotAI):
         if stalkercount > 6:
             for stalker in stalkers:
                 stalker.attack(self.enemy_start_locations[0])
+        else:
+            if self.structures(UnitTypeId.PYLON).ready:
+                proxy = self.structures(UnitTypeId.PYLON).closest_to(self.enemy_start_locations[0])
+                proxyposition = proxy.position.random_on_distance(3)
+                for stalker in stalkers:
+                    stalker.attack(proxyposition)
+
+
+    async def warp_stalkers(self):
+        for warpgate in self.structures(UnitTypeId.WARPGATE).ready:
+            abilities = await self.get_available_abilities(warpgate)
+            proxy = self.structures(UnitTypeId.PYLON).closest_to(self.enemy_start_locations[0])
+            if (
+                AbilityId.WARPGATETRAIN_STALKER in abilities and
+                self.can_afford(UnitTypeId.STALKER)
+            ):
+                placement = proxy.position.random_on_distance(3)
+                warpgate.warp_in(UnitTypeId.STALKER, placement)
 
     def on_end(self, result):
         print("Game ended.")
