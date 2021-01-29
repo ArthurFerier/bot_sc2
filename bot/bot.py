@@ -44,6 +44,8 @@ class CompetitiveBot(BotAI):
 
         await self.build_workers()
 
+        await self.build_pylons()
+
         pass
 
 
@@ -57,6 +59,22 @@ class CompetitiveBot(BotAI):
                 self.workers.amount < self.townhalls.amount * 22
         ):
             nexus.train(UnitTypeId.PROBE)
+
+    async def build_pylons(self):
+        nexus = self.townhalls.ready.random
+        position = nexus.position.towards(self.enemy_start_locations[0], 10)
+
+        if (
+            # if we have less than 4 spaces left for units
+            # todo : verify we are not supply_blocked
+                #  => implement good functions to see if it is the case
+            self.supply_left < 4 and
+            # verify that we are not already building a pylon
+            self.already_pending(UnitTypeId.PYLON) == 0 and
+            self.can_afford(UnitTypeId.PYLON)
+        ):
+            await self.build(UnitTypeId.PYLON, near=position)
+
 
     def on_end(self, result):
         print("Game ended.")
