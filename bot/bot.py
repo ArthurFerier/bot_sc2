@@ -13,6 +13,8 @@ class CompetitiveBot(BotAI):
         Race.Random
     """
 
+    # test
+
     async def on_start(self):
         print("Game started")
         # Do things here before the game starts
