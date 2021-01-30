@@ -67,10 +67,12 @@ class CompetitiveBot(BotAI):
             # if we have less than 4 spaces left for units
             # todo : verify we are not supply_blocked
                 #  => implement good functions to see if it is the case
-            self.supply_left < 4 and
+            self.supply_left < 4 + int(self.time/60) and
             # verify that we are not already building a pylon
             self.already_pending(UnitTypeId.PYLON) == 0 and
-            self.can_afford(UnitTypeId.PYLON)
+            self.can_afford(UnitTypeId.PYLON) and
+            # supply_cap at 200
+            self.supply_used < 200
         ):
             nexus = self.townhalls.ready.random
             position = await self.find_pylon_pos(nexus)
