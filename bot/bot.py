@@ -31,6 +31,7 @@ class CompetitiveBot(BotAI):
 
     def __init__(self):
         BotAI.__init__(self)
+        self.number_pylons = 0
 
     async def on_start(self):
         print("Game started")
@@ -61,8 +62,6 @@ class CompetitiveBot(BotAI):
             nexus.train(UnitTypeId.PROBE)
 
     async def build_pylons(self):
-        nexus = self.townhalls.ready.random
-        position = nexus.position.towards(self.enemy_start_locations[0], 10)
 
         if (
             # if we have less than 4 spaces left for units
@@ -73,7 +72,30 @@ class CompetitiveBot(BotAI):
             self.already_pending(UnitTypeId.PYLON) == 0 and
             self.can_afford(UnitTypeId.PYLON)
         ):
+            nexus = self.townhalls.ready.random
+            position = await self.find_pylon_pos(nexus)
             await self.build(UnitTypeId.PYLON, near=position)
+            self.number_pylons += 1
+
+    # have to ameliorate in the future
+    async def find_pylon_pos(self, nexus):
+        if self.number_pylons == 0:
+            postion_to_en = nexus.position.towards(self.enemy_start_locations[0], 10)
+            pos = await self.find_placement(UnitTypeId.PYLON, near=postion_to_en)
+            return pos
+
+        for i in range(20):
+            # todo : verify parameters
+            # we want to spread the pylons
+            # and not in the way of the workers gathering minerals
+            pos = nexus.position.random_on_distance([4, 15])
+            pylons = self.units(UnitTypeId.PYLON)
+            if pylons.amount == 0:
+                return pos
+            if pos.distance_to_closest(pylons) > 5:
+                return pos
+
+        return pos
 
 
     def on_end(self, result):
