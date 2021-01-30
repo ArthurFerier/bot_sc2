@@ -32,6 +32,8 @@ class CompetitiveBot(BotAI):
     def __init__(self):
         BotAI.__init__(self)
         self.number_pylons = 0
+        self.can_construct = True
+
 
     async def on_start(self):
         print("Game started")
@@ -42,10 +44,14 @@ class CompetitiveBot(BotAI):
         # Populate this function with whatever your bot should do!
 
         await self.distribute_workers()
-
         await self.build_workers()
 
+        await self.build_gateways()
+
         await self.build_pylons()
+        await self.build_vespene()
+
+        await self.build_cyber_core()
 
         pass
 
@@ -67,12 +73,12 @@ class CompetitiveBot(BotAI):
             # if we have less than 4 spaces left for units
             # todo : verify we are not supply_blocked
                 #  => implement good functions to see if it is the case
-            self.supply_left < 4 + int(self.time/60) and
+            self.supply_left < 5 + int(self.time/60) and
             # verify that we are not already building a pylon
             self.already_pending(UnitTypeId.PYLON) == 0 and
             self.can_afford(UnitTypeId.PYLON) and
             # supply_cap at 200
-            self.supply_used < 200
+            self.supply_cap < 200
         ):
             nexus = self.townhalls.ready.random
             position = await self.find_pylon_pos(nexus)
@@ -90,14 +96,91 @@ class CompetitiveBot(BotAI):
             # todo : verify parameters
             # we want to spread the pylons
             # and not in the way of the workers gathering minerals
-            pos = nexus.position.random_on_distance([4, 15])
+            pos = nexus.position.random_on_distance([10, 15])
             pylons = self.units(UnitTypeId.PYLON)
             if pylons.amount == 0:
                 return pos
-            if pos.distance_to_closest(pylons) > 5:
+            if pos.distance_to_closest(pylons) > 10:
                 return pos
 
         return pos
+
+    async def distance_to_nexus(self, position):
+        nexus = self.townhalls.closest_to(position)
+        return nexus.position.distance_to_point2(position)
+
+    async def build_gateways(self):
+        # build first gateway
+        if (
+            self.structures(UnitTypeId.PYLON).ready
+            and self.can_afford(UnitTypeId.GATEWAY)
+            and self.structures(UnitTypeId.GATEWAY).amount < 1
+            and self.can_construct
+        ):
+            pylon = self.structures(UnitTypeId.PYLON).ready.random
+            position = pylon.position.random_on_distance((0, 6))  # askip 6.5 from liquidpedia
+            await self.build(UnitTypeId.GATEWAY, near=position)
+
+
+
+
+    async def build_vespene(self):
+        if (
+            # build order : for the first assimilator
+            self.structures(UnitTypeId.PYLON)
+            and self.structures(UnitTypeId.GATEWAY)
+            and self.can_afford(UnitTypeId.ASSIMILATOR)
+            and self.can_construct
+        ):
+            # check if there are not already 2 assimilators per nexuses
+            if self.structures(UnitTypeId.ASSIMILATOR).amount < self.townhalls.ready.amount * 2:
+                for nexus in self.townhalls.ready:
+                    vggs = self.vespene_geyser.closer_than(15, nexus)
+                    for vgg in vggs:
+                        worker = self.workers\
+                            .filter(lambda worker: worker.is_collecting or worker.is_idle)\
+                            .closest_to(vgg.position)
+
+                        if worker is None:
+                            break
+                        if not self.gas_buildings or not self.gas_buildings.closer_than(1, vgg):
+                            worker.build(UnitTypeId.ASSIMILATOR, vgg)
+                            worker.stop(queue=True)
+
+
+    async def build_cyber_core(self):
+        if (
+            self.structures(UnitTypeId.ASSIMILATOR)
+            and not self.structures(UnitTypeId.CYBERNETICSCORE)
+            and not self.already_pending(UnitTypeId.CYBERNETICSCORE)
+        ):
+            if (
+                self.can_afford(UnitTypeId.CYBERNETICSCORE)
+            ):
+                # I want ot build the cybercore the furthest possible from the enemy
+                pylon = self.structures(UnitTypeId.PYLON)\
+                    .ready.furthest_to(self.enemy_start_locations[0])
+                position = pylon.position.random_on_distance((0, 6))
+
+                # we will try a hundred times before giving up
+                for i in range(100):
+                    if await self.distance_to_nexus(position) > 4:
+                        await self.build(UnitTypeId.CYBERNETICSCORE, near=position)
+                        self.can_construct = True
+                        return
+                    position = pylon.position.random_on_distance((0, 6))
+
+                await self.build(UnitTypeId.CYBERNETICSCORE, near=position)
+                self.can_construct = True
+
+            else:
+                # waiting to have enough money to construct the cybernetics
+                self.can_construct = False
+
+
+
+
+
 
 
     def on_end(self, result):
