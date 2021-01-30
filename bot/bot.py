@@ -53,6 +53,8 @@ class CompetitiveBot(BotAI):
 
         await self.build_cyber_core()
 
+        await self.build_first_expansion()
+
         pass
 
 
@@ -175,6 +177,19 @@ class CompetitiveBot(BotAI):
 
             else:
                 # waiting to have enough money to construct the cybernetics
+                self.can_construct = False
+
+
+    async def build_first_expansion(self):
+        if(
+            self.structures(UnitTypeId.CYBERNETICSCORE)
+            and self.townhalls.amount == 1
+            and not self.already_pending(UnitTypeId.NEXUS)
+        ):
+            if self.can_afford(UnitTypeId.NEXUS):
+                await self.expand_now(building=UnitTypeId.NEXUS)
+                self.can_construct = True
+            else:
                 self.can_construct = False
 
 
