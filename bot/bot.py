@@ -119,7 +119,7 @@ class CompetitiveBot(BotAI):
 
         pos = nexus.position.random_on_distance([8, 15])
         for i in range(20):
-            print("essai n {}".format(i))
+            await self.chat_send("essai n {}".format(i))
             # we want to spread the pylons
             # and not in the way of the workers gathering minerals
 
@@ -129,7 +129,7 @@ class CompetitiveBot(BotAI):
             if pos.distance_to_closest(pylons) > 15:
                 return pos
             pos = nexus.position.random_on_distance([8, 15])
-        print("les 20 positions n'ont pas été un succès")
+        await self.chat_send("les 20 positions n'ont pas été un succès")
         return pos
 
     async def distance_to_nexus(self, position):
@@ -270,9 +270,11 @@ class CompetitiveBot(BotAI):
     # todo : improve this function
     async def standby_army(self):
         town_to_defend = self.townhalls.closest_to(self.enemy_start_locations[0])
-        position = town_to_defend.position.towards(self.enemy_start_locations[0], 9)
+        #position = town_to_defend.position.towards(self.enemy_start_locations[0], 9)
+        position = self.main_base_ramp.top_center
         for stalker in self.units(UnitTypeId.STALKER):
             stalker.attack(position)
+
 
 
 
