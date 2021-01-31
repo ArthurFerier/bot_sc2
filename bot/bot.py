@@ -73,7 +73,6 @@ class CompetitiveBot(BotAI):
 
         if (
             # if we have less than 4 spaces left for units
-            # todo : verify we are not supply_blocked
                 #  => implement good functions to see if it is the case
             self.supply_left < 5 + int(self.time/60) and
             # verify that we are not already building a pylon
@@ -88,28 +87,53 @@ class CompetitiveBot(BotAI):
             self.number_pylons += 1
 
     # have to ameliorate in the future
+    # todo : verify that everything is correct when building lot of pylons
     async def find_pylon_pos(self, nexus):
         if self.number_pylons == 0:
             postion_to_en = nexus.position.towards(self.enemy_start_locations[0], 10)
             pos = await self.find_placement(UnitTypeId.PYLON, near=postion_to_en)
             return pos
 
+        # finding the nexus who needs pylons the most
+        # assuming the order is the order of built
+        nexuses = self.townhalls.ready
+        pylons_near = [0] * nexuses.amount
+        for pylon in self.structures(UnitTypeId.PYLON).ready:
+            # get id of the closest nexus of the pylon
+            nexus_id = pylon.position.sort_by_distance(nexuses)[0]
+            for j in range(nexuses.amount):
+                if nexus_id == nexuses[j]:
+                    pylons_near[j] += 1
+
+        # now I have an unordered list of the number of pylons for each nexus
+        poorest_n = 1000
+        poorest_pos = 0
+        for i in range(len(pylons_near)):
+            if pylons_near[i] < poorest_n:
+                poorest_pos = i
+                poorest_n = pylons_near[i]
+
+        nexus = nexuses[poorest_pos]
+
+        pos = nexus.position.random_on_distance([8, 15])
         for i in range(20):
-            # todo : verify parameters
             # we want to spread the pylons
             # and not in the way of the workers gathering minerals
-            pos = nexus.position.random_on_distance([10, 15])
+
             pylons = self.units(UnitTypeId.PYLON)
             if pylons.amount == 0:
                 return pos
-            if pos.distance_to_closest(pylons) > 10:
+            if pos.distance_to_closest(pylons) > 15:
                 return pos
+            pos = nexus.position.random_on_distance([8, 15])
 
         return pos
+
 
     async def distance_to_nexus(self, position):
         nexus = self.townhalls.closest_to(position)
         return nexus.position.distance_to_point2(position)
+
 
     async def build_gateways(self):
         # build first gateway
@@ -191,6 +215,8 @@ class CompetitiveBot(BotAI):
                 self.can_construct = True
             else:
                 self.can_construct = False
+
+
 
 
 
