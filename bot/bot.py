@@ -118,6 +118,7 @@ class CompetitiveBot(BotAI):
         nexus = nexuses[poorest_pos]
 
         pos = nexus.position.random_on_distance([8, 15])
+        # don't working as it should
         for i in range(20):
             await self.chat_send("essai n {}".format(i))
             # we want to spread the pylons
@@ -271,9 +272,21 @@ class CompetitiveBot(BotAI):
     async def standby_army(self):
         town_to_defend = self.townhalls.closest_to(self.enemy_start_locations[0])
         #position = town_to_defend.position.towards(self.enemy_start_locations[0], 9)
-        position = self.main_base_ramp.top_center
+        #position = self.main_base_ramp.top_center
+        ramps = await self.get_ramps_sorted()
+        secnd_ramp = ramps[1]
+        position = secnd_ramp.top_center
         for stalker in self.units(UnitTypeId.STALKER):
             stalker.attack(position)
+
+
+    async def get_ramps_sorted(self):
+        cached_main_base_ramps = sorted(
+            (ramp for ramp in self.game_info.map_ramps if len(ramp.upper) in {4, 9}),
+            key=lambda r: self.start_location.distance_to(r.top_center), reverse=False
+        )
+        return cached_main_base_ramps
+
 
 
 
