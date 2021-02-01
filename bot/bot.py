@@ -282,9 +282,12 @@ class CompetitiveBot(BotAI):
 
     async def get_ramps_sorted(self):
         cached_main_base_ramps = sorted(
-            (ramp for ramp in self.game_info.map_ramps if len(ramp.upper) in {4, 9}),
+            (ramp for ramp in self.game_info.map_ramps),
             key=lambda r: self.start_location.distance_to(r.top_center), reverse=False
         )
+        #await self.chat_send("longueur : {}".format(len(self.game_info.map_ramps)))
+        # longueur 2 pour cached main base ramps
+        # longueur 18 pour self.game_info.map_ramps
         return cached_main_base_ramps
 
 
