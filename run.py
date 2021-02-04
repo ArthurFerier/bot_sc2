@@ -2,7 +2,7 @@ import sys
 
 sys.path.insert(1, "python-sc2")
 
-from bot import CompetitiveBot
+from rush_stalker import CompetitiveBot
 
 import argparse
 import asyncio
