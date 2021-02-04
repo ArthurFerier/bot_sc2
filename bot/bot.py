@@ -118,7 +118,7 @@ class CompetitiveBot(BotAI):
         nexus = nexuses[poorest_pos]
 
         pos = nexus.position.random_on_distance([8, 15])
-        # don't working as it should
+        # still doesn't work
         for i in range(20):
             await self.chat_send("essai n {}".format(i))
             # we want to spread the pylons
@@ -127,7 +127,7 @@ class CompetitiveBot(BotAI):
             pylons = self.units(UnitTypeId.PYLON)
             if pylons.amount == 0:
                 return pos
-            if pos.distance_to_closest(pylons) > 15:
+            if pos.distance_to_closest(UnitTypeId.PYLON) > 15:
                 return pos
             pos = nexus.position.random_on_distance([8, 15])
         await self.chat_send("les 20 positions n'ont pas été un succès")
@@ -274,10 +274,11 @@ class CompetitiveBot(BotAI):
         #position = town_to_defend.position.towards(self.enemy_start_locations[0], 9)
         #position = self.main_base_ramp.top_center
         ramps = await self.get_ramps_sorted()
-        secnd_ramp = ramps[1]
+        secnd_ramp = ramps[self.townhalls.amount - 1]
         position = secnd_ramp.top_center
         for stalker in self.units(UnitTypeId.STALKER):
-            stalker.attack(position)
+            if stalker.distance_to(position) > 3:
+                stalker.attack(position)
 
 
     async def get_ramps_sorted(self):
